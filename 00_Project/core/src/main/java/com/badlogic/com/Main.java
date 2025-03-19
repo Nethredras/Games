@@ -55,6 +55,7 @@ public class  Main implements ApplicationListener {
     Rectangle playerRectangle;
     Rectangle middlePlatformRectangle;
     Rectangle bigLaserRectangle;
+    Rectangle laserDropRectangle;
 
     /** Laser */
     // Big Laser
@@ -118,7 +119,7 @@ public class  Main implements ApplicationListener {
 
         /** Laser */
         currentAmountOfAttacks = 0;
-        maxAmountOfAttacks = 2;
+        maxAmountOfAttacks = 1;
 
         // Big Laser
         bigLaserSprite = new Sprite(blueLaserTexture);
@@ -134,6 +135,7 @@ public class  Main implements ApplicationListener {
         playerRectangle = new Rectangle();
         middlePlatformRectangle = new Rectangle();
         bigLaserRectangle = new Rectangle();
+        laserDropRectangle = new Rectangle();
     }
 
     @Override
@@ -352,7 +354,6 @@ public class  Main implements ApplicationListener {
 
         // Attacks
         // Initializing Attacks
-        System.out.println(currentAmountOfAttacks);
         if (currentAmountOfAttacks < maxAmountOfAttacks) {
             randomInt = (int) (Math.random() * 2) + 1;
 
@@ -375,6 +376,7 @@ public class  Main implements ApplicationListener {
 
                 case 2:
                     if (!laserDropActive) {
+                        laserDropSprite.clear();
                         laserDropActive = true;
                         currentAmountOfAttacks++;
                     }
@@ -391,6 +393,7 @@ public class  Main implements ApplicationListener {
             } else {
                 bigLaserSprite.setX(bigLaserSprite.getX() - (bigLaserSpeed * delta));
             }
+
 
 
             // Überprüfe, ob der Laser innerhalb der Weltbreite ist
@@ -411,6 +414,14 @@ public class  Main implements ApplicationListener {
                 else {
                     bigLaserSprite.setY(0);
                 }
+
+                // Hit box
+                bigLaserRectangle.set(bigLaserSprite.getX(), bigLaserSprite.getY(), bigLaserSprite.getWidth(), bigLaserSprite.getHeight());
+
+                if (playerRectangle.overlaps(bigLaserRectangle)) {
+                    reloadGame();
+                }
+
             } else {
                 // Wenn der Laser den Bildschirm verlässt
                 bigLaserActive = false;
@@ -420,8 +431,18 @@ public class  Main implements ApplicationListener {
 
         // Execute the laser Drops
         if (laserDropActive) {
-            for (Sprite dropSprite : laserDropSprite) {
+            for (int i = laserDropSprite.size - 1; i >= 0; i--) {
+                Sprite dropSprite = laserDropSprite.get(i);
+                float dropWidth = dropSprite.getWidth();
+                float dropHeight = dropSprite.getHeight();
+
                 dropSprite.translateY(-laserDropSpeed * delta);
+                // Apply the drop position and size to the dropRectangle
+                laserDropRectangle.set(dropSprite.getX(), dropSprite.getY(), dropWidth, dropHeight);
+
+                 if (playerRectangle.overlaps(laserDropRectangle)) {
+                     reloadGame();
+                }
             }
 
             dropTimer += delta;
@@ -496,9 +517,25 @@ public class  Main implements ApplicationListener {
             if (laserDropSprite.peek().getY() + dropHeight < 0) {
                 laserDropActive = false;
                 currentAmountOfAttacks--;
-                laserDropSprite.setSize(0);
+                laserDropSprite.clear();
             }
         }
+    }
+
+    // Reload the game
+    public void reloadGame() {
+        // Player cords
+        playerSprite.setX(viewport.getWorldWidth() / 2);
+        playerSprite.setY(0);
+
+        // Platform cords
+        platformLeftSprite.setX(0);
+        platformRightSprite.setX(viewport.getWorldWidth() - platformRightSprite.getWidth());
+
+        // Laser
+        currentAmountOfAttacks = 0; 
+        bigLaserActive = false;
+        laserDropActive = false;
     }
 
     @Override
